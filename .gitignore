@@ -1,2 +1,16 @@
-.ipynb_checkpoints/Untitled-checkpoint.ipynb
-Untitled.ipynb
+# Jupyter notebook files
+.ipynb_checkpoints/
+*.ipynb
+
+# Data files - exclude large datasets
+new_structures/
+all_v2_SWARM.csv
+
+# System files
+.DS_Store
+*.pkl
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
