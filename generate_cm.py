@@ -61,27 +61,3 @@ def create_dict(setname_path, save_heatmaps=False):
 
 
 
-BASE_PATH = "....../new_structures"
-setname_path = os.path.join(BASE_PATH, "ACONF")
-
-final_dict = create_dict(setname_path, save_heatmaps=False)
-
-# save dictionary as pickle
-with open(os.path.join(current_dir, "final_dict.pkl"), "wb") as f:
-    pickle.dump(final_dict, f)
-
-# print(final_dict)
-
-# TODO: 
-# make a function similar to create_dict to handle all 55 setnames or 
-# make a loop to run create_dict for all setnames and append them all to a single dict
-
-# list of 55 setnames ? (double check )
-dblist = [
-    "ACONF","ADIM6","AHB21","AL2X6","ALK8","ALKBDE10","Amino20x4","BH76","BH76RC","BHDIV10","BHPERI","BHROT27",
-    "BSR36","BUT14DIOL","C60ISO","CARBHB12","CDIE20","CHB6","DARC","DC13","DIPCS10","FH51","G21EA","G21IP","G2RC","HAL59",
-    "HEAVY28","HEAVYSB11","ICONF","IDISP","IL16","INV24","ISO34","ISOL24","MB16-43","MCONF","NBPRC","PA26",
-    "PArel","PCONF21","PNICO23","PX13","RC21","RG18","RSE43","S22","S66","SCONF","SIE4x4","TAUT15","UPU23","W4-11","WATER27","WCPT18","YBDE18"
-]
-
-

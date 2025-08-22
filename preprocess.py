@@ -91,52 +91,54 @@ BASE_PATH = "......./new_structures"
 
 
 # dict of coulomb matrices (rn only aconf)
-with open("final_dict.pkl", "rb") as f:
-    final_dict = pickle.load(f)
+if __name__ == "__main__":
+    # Execution code - only runs when script is called directly
+    with open("final_dict.pkl", "rb") as f:
+        final_dict = pickle.load(f)
 
-# loop over setnames (key of final dict) (now, only aconf)
-reaction_dicts = {} 
-for setname, innerDict in final_dict.items():  
-    setname_path = os.path.join(BASE_PATH, setname)  # path for setname folder
-    ref_path = os.path.join(setname_path, "ref")     # path for ref file of the setname
-    rows = parse_ref_file(ref_path)                  # get all rows in the ref file of the setname 
+    # loop over setnames (key of final dict) (now, only aconf)
+    reaction_dicts = {} 
+    for setname, innerDict in final_dict.items():  
+        setname_path = os.path.join(BASE_PATH, setname)  # path for setname folder
+        ref_path = os.path.join(setname_path, "ref")     # path for ref file of the setname
+        rows = parse_ref_file(ref_path)                  # get all rows in the ref file of the setname 
 
-    combined_matrices = []
-    refs = []
-    for systems, coeffs, ref_val in rows:
-        coulomb_matrices = [innerDict[s] for s in systems]    # get Coulomb Matricess for systems of this row
-        C = combine_cm(coulomb_matrices, coeffs)              # combine 
-        combined_matrices.append(C)                           # add all matrices of this setname to a list
-        refs.append(ref_val)                                  # add all ref values of this setname , not sure if they're useful ????
+        combined_matrices = []
+        refs = []
+        for systems, coeffs, ref_val in rows:
+            coulomb_matrices = [innerDict[s] for s in systems]    # get Coulomb Matricess for systems of this row
+            C = combine_cm(coulomb_matrices, coeffs)              # combine 
+            combined_matrices.append(C)                           # add all matrices of this setname to a list
+            refs.append(ref_val)                                  # add all ref values of this setname , not sure if they're useful ????
 
-        #add metadata from info files here? 
+            #add metadata from info files here? 
 
-    # put all combined matrices in a dict 
-    reaction_dicts[setname] = {"matrices":  combined_matrices, "refs": refs} 
-
-
-# this is how data  (combined matrices) is stored
-# {"aconf" : {"matrices":  [matrix 1, 2, ... , matrix 15]
-#                 "refs": [ref1, ref2, ....., ref15] }}
+        # put all combined matrices in a dict 
+        reaction_dicts[setname] = {"matrices":  combined_matrices, "refs": refs} 
 
 
-# # prints all the combined matrices : 
-# for k,v in reaction_dicts.items(): 
-#     print(v["matrices"])
+    # this is how data  (combined matrices) is stored
+    # {"aconf" : {"matrices":  [matrix 1, 2, ... , matrix 15]
+    #                 "refs": [ref1, ref2, ....., ref15] }}
 
 
-# storing them into pandas:
-df = pd.DataFrame({
-    "matrix": reaction_dicts["ACONF"]["matrices"],  # list of np.ndarrays
-    "ref":    reaction_dicts["ACONF"]["refs"],      # list of floats
-})
-
-print(df.head())  
+    # # prints all the combined matrices : 
+    # for k,v in reaction_dicts.items(): 
+    #     print(v["matrices"])
 
 
-# TODO : 
-# diagonalize the matrix and turn it into 1d / pad them w zeros
-# add meta data 
-# add feauture labels 
+    # storing them into pandas:
+    df = pd.DataFrame({
+        "matrix": reaction_dicts["ACONF"]["matrices"],  # list of np.ndarrays
+        "ref":    reaction_dicts["ACONF"]["refs"],      # list of floats
+    })
+
+    print(df.head())  
+
+
+    # TODO : 
+    # diagonalize the matrix and turn it into 1d / pad them w zeros
+    # add meta data 
+    # add feauture labels 
 
 

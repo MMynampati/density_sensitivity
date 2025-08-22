@@ -1,0 +1,285 @@
+#!/usr/bin/env python3
+"""
+Validation script to verify diagonalization results are correct.
+"""
+
+import numpy as np
+import pandas as pd
+import pickle
+import matplotlib.pyplot as plt
+from test_diagonalization import *
+
+def validate_eigenvalue_properties(matrix, eigenvalues):
+    """Test basic eigenvalue properties."""
+    print(f"    Matrix shape: {matrix.shape}")
+    print(f"    Eigenvalues shape: {eigenvalues.shape}")
+    
+    # Check 1: Number of eigenvalues equals matrix dimension
+    n = matrix.shape[0]
+    assert len(eigenvalues) == n, f"Expected {n} eigenvalues, got {len(eigenvalues)}"
+    print(f"    ✅ Correct number of eigenvalues: {n}")
+    
+    # Check 2: All eigenvalues are real (Coulomb matrices are real symmetric)
+    assert np.all(np.isreal(eigenvalues)), "Eigenvalues should be real for symmetric matrices"
+    print(f"    ✅ All eigenvalues are real")
+    
+    # Check 3: Trace should equal sum of eigenvalues
+    trace_matrix = np.trace(matrix)
+    sum_eigenvalues = np.sum(eigenvalues)
+    trace_diff = abs(trace_matrix - sum_eigenvalues)
+    assert trace_diff < 1e-10, f"Trace mismatch: matrix={trace_matrix}, eigenvals={sum_eigenvalues}"
+    print(f"    ✅ Trace verification: {trace_matrix:.6f} ≈ {sum_eigenvalues:.6f} (diff: {trace_diff:.2e})")
+    
+    return True
+
+def test_manual_diagonalization():
+    """Test diagonalization against numpy's built-in functions."""
+    
+    print("=== Manual Diagonalization Validation ===\n")
+    
+    # Load test data
+    with open("final_dict.pkl", "rb") as f:
+        final_dict = pickle.load(f)
+    
+    # Get a sample Coulomb matrix
+    aconf_data = final_dict["ACONF"]
+    sample_system = "B_G"
+    sample_matrix = aconf_data[sample_system]
+    
+    print(f"Testing with sample matrix: {sample_system}")
+    
+    # Method 1: Our function
+    our_eigenvalues = diagonalize_matrix(sample_matrix)
+    
+    # Method 2: Direct numpy
+    numpy_eigenvalues = np.linalg.eigvals(sample_matrix)
+    
+    # Method 3: Full eigendecomposition
+    full_eigenvals, full_eigenvecs = np.linalg.eig(sample_matrix)
+    
+    print(f"Our function eigenvalues: {our_eigenvalues[:5]}...")
+    print(f"Numpy eigenvalues: {numpy_eigenvalues[:5]}...")
+    print(f"Full eig eigenvalues: {full_eigenvals[:5]}...")
+    
+    # Compare (sort both since order might differ)
+    our_sorted = np.sort(our_eigenvalues)
+    numpy_sorted = np.sort(numpy_eigenvalues)
+    full_sorted = np.sort(full_eigenvals)
+    
+    # Check if they match (within numerical precision)
+    diff1 = np.max(np.abs(our_sorted - numpy_sorted))
+    diff2 = np.max(np.abs(our_sorted - full_sorted))
+    
+    print(f"\nMax difference (our vs numpy): {diff1:.2e}")
+    print(f"Max difference (our vs full eig): {diff2:.2e}")
+    
+    assert diff1 < 1e-12, f"Our function doesn't match numpy: {diff1}"
+    assert diff2 < 1e-12, f"Our function doesn't match full eig: {diff2}"
+    
+    print("✅ All eigenvalue methods agree!")
+    
+    # Validate basic properties
+    validate_eigenvalue_properties(sample_matrix, our_eigenvalues)
+
+def test_combined_matrix_properties():
+    """Test that combined matrices have expected properties."""
+    
+    print("\n=== Combined Matrix Validation ===\n")
+    
+    # Load data
+    with open("final_dict.pkl", "rb") as f:
+        final_dict = pickle.load(f)
+    
+    ref_path = "new_structures/ACONF/ref"
+    rows = parse_ref_file(ref_path)
+    aconf_data = final_dict["ACONF"]
+    
+    print(f"Testing first few reactions:")
+    
+    for i, (systems, coeffs, ref_val) in enumerate(rows[:3]):
+        print(f"\n--- Reaction {i+1}: {systems} with coeffs {coeffs} ---")
+        
+        # Get individual matrices
+        coulomb_matrices = [aconf_data[s] for s in systems]
+        
+        # Test individual matrices first
+        print("Individual matrix properties:")
+        for j, (system, matrix) in enumerate(zip(systems, coulomb_matrices)):
+            print(f"  {system}: shape {matrix.shape}")
+            # Check if symmetric (Coulomb matrices should be)
+            is_symmetric = np.allclose(matrix, matrix.T)
+            print(f"    Symmetric: {is_symmetric}")
+            if not is_symmetric:
+                print(f"    ⚠️  Warning: {system} matrix is not symmetric!")
+        
+        # Combine and test
+        combined_matrix = combine_cm(coulomb_matrices, coeffs)
+        our_eigenvalues = diagonalize_matrix(combined_matrix)
+        
+        print(f"Combined matrix properties:")
+        validate_eigenvalue_properties(combined_matrix, our_eigenvalues)
+        
+        # Check if combined matrix is still symmetric for simple cases
+        if len(set(m.shape for m in coulomb_matrices)) == 1 and all(abs(c) == 1 for c in coeffs):
+            is_symmetric = np.allclose(combined_matrix, combined_matrix.T)
+            print(f"    Combined matrix symmetric: {is_symmetric}")
+
+def test_reaction_chemistry():
+    """Validate that the chemical reactions make sense."""
+    
+    print("\n=== Chemical Reaction Validation ===\n")
+    
+    ref_path = "new_structures/ACONF/ref"
+    rows = parse_ref_file(ref_path)
+    
+    print("Checking reaction patterns:")
+    
+    for i, (systems, coeffs, ref_val) in enumerate(rows):
+        print(f"Reaction {i+1}: ", end="")
+        
+        # Build reaction equation
+        reactants = []
+        products = []
+        
+        for system, coeff in zip(systems, coeffs):
+            if coeff < 0:
+                if abs(coeff) == 1:
+                    reactants.append(system)
+                else:
+                    reactants.append(f"{abs(coeff)}{system}")
+            else:
+                if coeff == 1:
+                    products.append(system)
+                else:
+                    products.append(f"{coeff}{system}")
+        
+        reaction_eq = " + ".join(reactants) + " → " + " + ".join(products)
+        print(f"{reaction_eq} (ΔE = {ref_val})")
+        
+        # Basic checks
+        assert len(reactants) > 0, f"No reactants in reaction {i+1}"
+        assert len(products) > 0, f"No products in reaction {i+1}"
+        assert ref_val is not None, f"No reference value for reaction {i+1}"
+
+def test_eigenvalue_distributions():
+    """Analyze eigenvalue distributions for sanity."""
+    
+    print("\n=== Eigenvalue Distribution Analysis ===\n")
+    
+    # Load results
+    with open("test_diagonalized_results.pkl", "rb") as f:
+        results = pickle.load(f)
+    
+    eigenvalue_arrays = results["ACONF"]["diagonalized"]
+    refs = results["ACONF"]["refs"]
+    
+    print(f"Analyzing {len(eigenvalue_arrays)} reactions...")
+    
+    # Collect all eigenvalues
+    all_eigenvalues = []
+    for arr in eigenvalue_arrays:
+        all_eigenvalues.extend(arr)
+    
+    all_eigenvalues = np.array(all_eigenvalues)
+    
+    print(f"Total eigenvalues: {len(all_eigenvalues)}")
+    print(f"Eigenvalue range: {np.min(all_eigenvalues):.3f} to {np.max(all_eigenvalues):.3f}")
+    print(f"Mean eigenvalue: {np.mean(all_eigenvalues):.3f}")
+    print(f"Std eigenvalue: {np.std(all_eigenvalues):.3f}")
+    
+    # Check for any suspicious values
+    zero_count = np.sum(np.abs(all_eigenvalues) < 1e-12)
+    large_count = np.sum(np.abs(all_eigenvalues) > 1000)
+    
+    print(f"Near-zero eigenvalues: {zero_count}")
+    print(f"Very large eigenvalues (>1000): {large_count}")
+    
+    # Reference value statistics
+    refs_array = np.array(refs)
+    print(f"\nReference values:")
+    print(f"Range: {np.min(refs_array):.3f} to {np.max(refs_array):.3f}")
+    print(f"Mean: {np.mean(refs_array):.3f}")
+    
+    return all_eigenvalues, refs_array
+
+def create_validation_plots():
+    """Create plots to visually inspect results."""
+    
+    print("\n=== Creating Validation Plots ===\n")
+    
+    try:
+        all_eigenvalues, refs = test_eigenvalue_distributions()
+        
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 10))
+        
+        # Plot 1: Eigenvalue distribution
+        ax1.hist(all_eigenvalues, bins=50, alpha=0.7)
+        ax1.set_title("Distribution of All Eigenvalues")
+        ax1.set_xlabel("Eigenvalue")
+        ax1.set_ylabel("Frequency")
+        
+        # Plot 2: Reference values
+        ax2.scatter(range(len(refs)), refs)
+        ax2.set_title("Reference Values by Reaction")
+        ax2.set_xlabel("Reaction Index")
+        ax2.set_ylabel("Reference Value")
+        
+        # Plot 3: Eigenvalue range per reaction
+        with open("test_diagonalized_results.pkl", "rb") as f:
+            results = pickle.load(f)
+        eigenvalue_arrays = results["ACONF"]["diagonalized"]
+        
+        ranges = [np.max(arr) - np.min(arr) for arr in eigenvalue_arrays]
+        ax3.bar(range(len(ranges)), ranges)
+        ax3.set_title("Eigenvalue Range per Reaction")
+        ax3.set_xlabel("Reaction Index")
+        ax3.set_ylabel("Max - Min Eigenvalue")
+        
+        # Plot 4: Array sizes
+        sizes = [len(arr) for arr in eigenvalue_arrays]
+        ax4.hist(sizes, bins=range(min(sizes), max(sizes)+2), alpha=0.7)
+        ax4.set_title("Distribution of Array Sizes")
+        ax4.set_xlabel("Array Size")
+        ax4.set_ylabel("Frequency")
+        
+        plt.tight_layout()
+        plt.savefig("validation_plots.png", dpi=150, bbox_inches='tight')
+        print("✅ Saved validation plots to validation_plots.png")
+        
+    except Exception as e:
+        print(f"❌ Error creating plots: {e}")
+
+def main():
+    """Run all validation tests."""
+    
+    print("🔍 DIAGONALIZATION RESULTS VALIDATION")
+    print("=" * 50)
+    
+    try:
+        # Test 1: Basic eigenvalue computation
+        test_manual_diagonalization()
+        
+        # Test 2: Combined matrix properties  
+        test_combined_matrix_properties()
+        
+        # Test 3: Chemical reaction logic
+        test_reaction_chemistry()
+        
+        # Test 4: Statistical analysis
+        test_eigenvalue_distributions()
+        
+        # Test 5: Visual validation
+        create_validation_plots()
+        
+        print("\n" + "=" * 50)
+        print("🎉 ALL VALIDATION TESTS PASSED!")
+        print("Your diagonalization results appear to be correct.")
+        
+    except Exception as e:
+        print(f"\n❌ VALIDATION FAILED: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    main()
+
