@@ -6,6 +6,7 @@
 - [x] Write structure to go into each subset folder
 - [x] Fix hardcoded data paths in scripts
 - [ ] Verify access to all 55 molecular datasets
+- [ ] Verify ref files exist for all 55 folders. 
 
 ### 2. Coulomb Matrix Generation  
 - [x] Make Coulomb matrices for each molecule (ACONF subset complete)
@@ -15,7 +16,7 @@
 ### 3. Reaction Matrix Creation
 - [x] Create combined reactant-product matrix (basic implementation)
 - [ ] Optimize combined matrix creation for all datasets
-- [ ] Handle edge cases in stoichiometry combinations
+- [x] Handle edge cases in stoichiometry combinations
 
 ### 4. Matrix Compression
 - [x] Diagonalize matrix to compress to 1D
