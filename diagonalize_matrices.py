@@ -25,14 +25,18 @@ def diagonalize_matrix(matrix: np.ndarray) -> np.ndarray:
         matrix: nxn numpy array to diagonalize
         
     Returns:
-        1D array of eigenvalues in natural order
+        1D array of eigenvalues in natural order      *NOTE: check that function returns same "order" everytime 
     """
     eigenvalues = np.linalg.eigvals(matrix)
     
     # Handle complex eigenvalues - take real part for now
-    # (Coulomb matrices should be real symmetric, so eigenvalues should be real)
+    # (Coulomb matrices should be real symmetric, so eigenvalues should be real)  
+        ## NOTE: look into this - check to make sure this is true for reaction level matrices
+
+    #if we find non-real parts to a eigenvalue something has probably gone wrong- so then throw an error
     if np.iscomplexobj(eigenvalues):
         eigenvalues = np.real(eigenvalues)
+
     
     return eigenvalues
 

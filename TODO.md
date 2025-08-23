@@ -64,6 +64,7 @@
 - [ ] Eigenvalue distribution analysis across all datasets  
 - [ ] Correlation analysis between molecular properties and targets
 - [ ] Dataset size and complexity statistics
+- [ ] Investigate class imbalances for density sensitivity across all 55 subsets
 
 ## Current Status
 - ✅ Complete end-to-end pipeline working on ACONF dataset
