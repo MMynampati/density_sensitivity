@@ -34,6 +34,7 @@ import os
 import numpy as np
 import pandas as pd
 import pickle
+import matplotlib.pyplot as plt
 from statistics import mean, median, stdev
 from typing import List, Dict, Tuple
 
@@ -278,6 +279,7 @@ def main():
 
     # Configuration
     base_path = "new_structures"
+   
 
     # load the pickle containing coulomb matrices for all setnames 
     with open("final_dict_allsets.pkl", "rb") as f:
@@ -293,9 +295,10 @@ def main():
     # store  all 'vectors of eigenvals' for each setname in a dict
     # print largest size of 'vector of eigenvals' and which subset/systems it is from 
     # print summary stats of length of 'vectors of eigenvals' 
+    # also storing metadata for each sample. such as ref values / list of system & coeffs / size of eigenval vector 
 
     reaction_dicts = {} 
-    sizes = []           #global list to store size of all vectors 
+    all_sizes = []           #global list to store size of all vectors 
     max_size = -1
     max_setname = None
     max_systems = None
@@ -309,11 +312,16 @@ def main():
             rows = parse_ref_file(ref_path)                           # get all rows in the ref file of the setname 
 
             eigenval_vect_list = []     #list holds all vectors of eigenvals for current setname
+            refs = []                   # list of all refs for curr setname
+            systems_list = []           # list of all system pairs for curr setname
+            coeffs_list = []            # list of all coeffs for curr setname
+            sizes_list = []             # list of length of each eigenvalue vector for current setname
+
             for systems, coeffs, ref_val in rows:
                 coulomb_matrices = [innerDict[s.lower()] for s in systems]   #convert to lowercase to prevent name missmatch 
                 try:
                     C = combine_cm(coulomb_matrices, coeffs)    # combine 
-                except ValueError as e:                         #if shape missmatch
+                except ValueError as e:                         #if shape missmatch (only happens for 4 samples)
                     S = max(M.shape[0] for M in coulomb_matrices)
                     print(f"--[{setname}] shape mismatch for systems={systems} coeffs={coeffs} - {e}. Using {S}x{S} zero placeholder.")
                     C = np.zeros((S, S), dtype=coulomb_matrices[0].dtype)
@@ -323,28 +331,65 @@ def main():
                 eigenval_vect_list.append(eigenval_vect) # add all 'vector of eigenvals'of this setname to a list
 
                 len_eig = len(eigenval_vect)
-                sizes.append(len_eig)    #adding its size to out global list of sizes 
+                all_sizes.append(len_eig)         #adding its size to out global list of sizes 
                 if len_eig > max_size:        #update if larger
                     max_size = len_eig
                     max_setname = setname
                     max_systems = systems
-                
-            # put all 'vectors of eigenvals' for this setname in a dict 
-            reaction_dicts[setname] = eigenval_vect_list
+
+                # meta data 
+                refs.append(ref_val)
+                systems_list.append(systems)            
+                coeffs_list.append(coeffs)              
+                sizes_list.append(len(eigenval_vect))   
+
+            # put all 'vectors of eigenvals' and metadata for this setname in a dict 
+            reaction_dicts[setname] = {"eigenval_vectors": eigenval_vect_list, "refs": refs,
+                                        "systems": systems_list, "coeffs": coeffs_list,           
+                                        "sizes": sizes_list }
 
     print("\nDone storing vectors of eigen vals in a Dict....")
+    # this is how data is stored
+    # {"aconf" : {"eigenval_vectors":  [vector 1, 2, ... , vector 15]
+    #                 "refs": [ref1, ref2, ....., ref15] 
+    #                 "systems": [systems1, 2, ..., systems15 ]
+    #                 "coeffs": [coeffs1, 2, ..., coeffs15 ]
+    #                 "sizes": [size1, 2, ..., size15 ]}}
 
     print(f"\n\nLargest eigenvector size: {max_size}")
     print(f"  setname: {max_setname}")
     print(f"  systems: {max_systems}")
 
     print("\n\nstatistics about length of vectors....")
-    print(f"n = {len(sizes)} toal vectors (samples)")
-    print(f"min length= {min(sizes)}")
-    print(f"max length= {max(sizes)}")
-    print(f"mean length= {mean(sizes):.3f}")
-    print(f"median length= {median(sizes)}")
-    print(f"std = {stdev(sizes):.3f}")
+    print(f"n = {len(all_sizes)} toal vectors (samples)")
+    print(f"min length= {min(all_sizes)}")
+    print(f"max length= {max(all_sizes)}")
+    print(f"mean length= {mean(all_sizes):.3f}")
+    print(f"median length= {median(all_sizes)}")
+    print(f"std = {stdev(all_sizes):.3f}")
+
+    # # uncomment to make the pandas df
+    # rows = []
+    # for setname, d in reaction_dicts.items():
+    #     # skip any non-set keys if you added them (e.g., "_index")
+    #     if not isinstance(d, dict) or "eigenval_vectors" not in d:
+    #         continue
+
+    #     n = len(d["eigenval_vectors"])
+    #     for i in range(n):
+    #         rows.append({ "setname": setname,
+    #                     "idx_within_set": i,
+    #                     "vector": d["eigenval_vectors"][i],  # numpy array (object column)
+    #                     "size": d["sizes"][i],
+    #                     "ref": d["refs"][i],
+    #                     "systems": d["systems"][i],
+    #                     "coeffs": d["coeffs"][i] })
+
+    # df = pd.DataFrame(rows)
+    # print(df.head())
+
+    # # to store as a csv
+    # #df.to_csv("reaction_vectors.csv", index=False)
 
 
     available_subsets = reaction_dicts.keys()          
