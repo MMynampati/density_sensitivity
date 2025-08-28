@@ -25,9 +25,14 @@ def diagonalize_matrix(matrix: np.ndarray) -> np.ndarray:
         matrix: nxn numpy array to diagonalize
         
     Returns:
-        1D array of eigenvalues in natural order      *NOTE: check that function returns same "order" everytime 
+        1D array of eigenvalues in ascending order     *NOTE: check that function returns same "order" everytime 
     """
-    eigenvalues = np.linalg.eigvals(matrix)
+    # Check symmetry
+    if not np.allclose(matrix, matrix.T, atol=1e-10):
+        raise ValueError("Matrix is not symmetric. Eigenvalues may not be real.")
+    
+    #   eigh returns eigenvalues in ascending order
+    eigenvalues = np.linalg.eigh(matrix)[0]         
     
     # Handle complex eigenvalues - take real part for now
     # (Coulomb matrices should be real symmetric, so eigenvalues should be real)  

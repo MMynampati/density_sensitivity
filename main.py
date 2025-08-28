@@ -2,6 +2,7 @@
 """
 Main pipeline for density sensitivity ML analysis.
 
+PREVIOUS:
 This script implements the complete workflow:
 1. Loop into each subset folder (currently ACONF only)
 2. Make Coulomb matrices for all molecules in that folder
@@ -12,6 +13,23 @@ This script implements the complete workflow:
    c) Pad with zeros to largest molecule size
    d) Append charge and mult of product
 5. Store 1D arrays in both human-readable and model-compatible formats
+
+NEW:
+This script implements the complete workflow:
+1. Load coulomb matrices from the dictionary
+2. Go through the subsets, and for each reaction in each subset:
+    a) combine matrices according to stoichiometry
+    b) diagonalize the combined matrix
+    c) update max size if exceeded
+3. Store all eigenvalue vectors in a dictionary
+4. Go through the subsets again, and for each reaction in each subset:
+    a) pad [eigenvalue vector] with zeros to the max size
+    b) append charge and mult of product
+    c) add a label for the reaction 
+    d) add to the final dataframe
+5. Get training 
+
+
 """
 
 import os
@@ -266,8 +284,7 @@ def main():
     """
     Main pipeline function.
     
-    Currently processes ACONF subset only. 
-    TODO: Expand outer loop to handle all 55 subsets.
+    Processes multiple subsets for density sensitivity analysis.
     """
     
     print("🚀 Density Sensitivity ML Pipeline")
@@ -275,16 +292,40 @@ def main():
     
     # Configuration
     base_path = "new_structures"
-    subsets_to_process = ["ACONF"]  # TODO: Expand to all 55 subsets
     
-    for subset_name in subsets_to_process:
-        print(f"\\n🔄 Processing subset: {subset_name}")
-        
+    # Get all available subsets
+    if not os.path.exists(base_path):
+        print(f"❌ Error: Data path not found: {base_path}")
+        print("Please ensure 'new_structures' folder is in the correct location.")
+        return
+    
+    # List all subsets (folders in new_structures)
+    available_subsets = [d for d in os.listdir(base_path) 
+                        if os.path.isdir(os.path.join(base_path, d)) 
+                        and not d.startswith('.')]
+    
+    print(f"📁 Found {len(available_subsets)} available subsets:")
+    for subset in sorted(available_subsets):
+        print(f"   - {subset}")
+    
+    # For now, process only a few subsets for testing
+    # TODO: Expand to all subsets
+    test_subsets = ["ACONF", "ADIM6", "AHB21"]  # Start with a few for testing
+    
+    print(f"\n🧪 Processing test subsets: {test_subsets}")
+    
+    successful_subsets = []
+    failed_subsets = []
+    
+    for subset_name in test_subsets:
         subset_path = os.path.join(base_path, subset_name)
         
         if not os.path.exists(subset_path):
             print(f"❌ Subset path not found: {subset_path}")
+            failed_subsets.append(subset_name)
             continue
+        
+        print(f"\n🔄 Processing subset: {subset_name}")
         
         try:
             # Process all reactions in this subset
@@ -301,15 +342,25 @@ def main():
             max_eigenvalue_size = feature_matrix.shape[1] - 2  # Subtract metadata features
             save_results(feature_matrix, targets, reaction_metadata, subset_name, max_eigenvalue_size)
             
+            successful_subsets.append(subset_name)
             print(f"✅ Completed processing {subset_name}")
             
         except Exception as e:
             print(f"❌ Error processing {subset_name}: {e}")
-            import traceback
-            traceback.print_exc()
+            failed_subsets.append(subset_name)
             continue
     
-    print(f"\\n🎉 Pipeline completed!")
+    # Summary
+    print(f"\n=== Pipeline Summary ===")
+    print(f"✅ Successful: {len(successful_subsets)} subsets")
+    print(f"❌ Failed: {len(failed_subsets)} subsets")
+    
+    if successful_subsets:
+        print(f"✅ Processed: {', '.join(successful_subsets)}")
+    if failed_subsets:
+        print(f"❌ Failed: {', '.join(failed_subsets)}")
+    
+    print(f"\n🎉 Pipeline completed!")
     print("Ready for Random Forest training! 🌲🤖")
 
 
