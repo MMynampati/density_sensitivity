@@ -16,29 +16,28 @@ This script implements the complete workflow:
 
 NEW:
 This script implements the complete workflow:
-1. Load coulomb matrices from the dictionary
-2. Go through the subsets, and for each reaction in each subset:
-    a) combine matrices according to stoichiometry
-    b) diagonalize the combined matrix
-    c) update max size if exceeded
-3. Store all eigenvalue vectors in a dictionary
+1. Load coulomb matrices from the dictionary    ----------------> done
+2. Go through the subsets, and for each reaction in each subset:  ----------------> done
+    a) combine matrices according to stoichiometry    ----------------> done
+    b) diagonalize the combined matrix     ----------------> done
+    c) update max size if exceeded   ----------------> done
+3. Store all eigenvalue vectors in a dictionary    ----------------> done
+
 4. Go through the subsets again, and for each reaction in each subset:
     a) pad [eigenvalue vector] with zeros to the max size
     b) append charge and mult of product
     c) add a label for the reaction 
     d) add to the final dataframe
 5. Get training 
-
-
 """
-
 import os
 import numpy as np
 import pandas as pd
 import pickle
+from statistics import mean, median, stdev
 from typing import List, Dict, Tuple
 
-# Import functions from our files
+# # Import functions from our files
 from generate_cm import create_cm
 from preprocess import parse_ref_file, combine_cm
 from diagonalize_matrices import diagonalize_matrix, analyze_eigenvalue_distributions, create_ml_dataframe
@@ -48,10 +47,8 @@ from pad_and_metadata import pad_eigenvalue_arrays, parse_info_file, get_product
 def create_all_coulomb_matrices(subset_path: str) -> Dict[str, np.ndarray]:
     """
     Create Coulomb matrices for all molecules in a subset folder.
-    
     Args:
         subset_path: Path to subset folder (e.g., "new_structures/ACONF")
-        
     Returns:
         Dictionary mapping molecule names to their Coulomb matrices
     """
@@ -92,14 +89,11 @@ def create_all_coulomb_matrices(subset_path: str) -> Dict[str, np.ndarray]:
 def setup_subset_data(subset_path: str) -> Tuple[Dict[str, np.ndarray], Dict, List]:
     """
     Load all necessary data for processing a subset.
-    
     Args:
         subset_path: Path to subset folder
-        
     Returns:
         Tuple of (coulomb_matrices, info_data, reactions)
     """
-    
     # Step 1: Create all Coulomb matrices for this subset
     coulomb_matrices = create_all_coulomb_matrices(subset_path)
     
@@ -127,7 +121,6 @@ def process_single_reaction(reaction_id: int,
                            info_data: Dict) -> Tuple[np.ndarray, Dict]:
     """
     Process a single reaction: combine matrices, diagonalize, extract metadata.
-    
     Args:
         reaction_id: 1-indexed reaction identifier
         systems: List of molecule names in reaction
@@ -135,11 +128,9 @@ def process_single_reaction(reaction_id: int,
         ref_val: Reference energy value
         coulomb_matrices: Dict of molecule name -> Coulomb matrix
         info_data: Dict of molecule charge/spin data
-        
     Returns:
         Tuple of (eigenvalues, metadata_dict)
     """
-    
     print(f"  Processing reaction {reaction_id}: {systems} {coeffs} -> {ref_val}")
     
     # a) Get Coulomb matrices for this reaction
@@ -224,8 +215,6 @@ def process_subset_reactions(subset_name: str, subset_path: str) -> Tuple[List[n
     
     return eigenvalue_arrays, ref_values, reaction_metadata
 
-
-
 def save_results(feature_matrix: np.ndarray, 
                 targets: np.ndarray, 
                 reaction_metadata: List[Dict],
@@ -283,85 +272,110 @@ def save_results(feature_matrix: np.ndarray,
 def main():
     """
     Main pipeline function.
-    
     Processes multiple subsets for density sensitivity analysis.
     """
-    
-    print("🚀 Density Sensitivity ML Pipeline")
-    print("=" * 50)
-    
+    print("Density Sensitivity ML Pipeline")
+
     # Configuration
     base_path = "new_structures"
-    
-    # Get all available subsets
-    if not os.path.exists(base_path):
-        print(f"❌ Error: Data path not found: {base_path}")
-        print("Please ensure 'new_structures' folder is in the correct location.")
-        return
-    
-    # List all subsets (folders in new_structures)
-    available_subsets = [d for d in os.listdir(base_path) 
-                        if os.path.isdir(os.path.join(base_path, d)) 
-                        and not d.startswith('.')]
-    
-    print(f"📁 Found {len(available_subsets)} available subsets:")
-    for subset in sorted(available_subsets):
-        print(f"   - {subset}")
-    
-    # For now, process only a few subsets for testing
-    # TODO: Expand to all subsets
-    test_subsets = ["ACONF", "ADIM6", "AHB21"]  # Start with a few for testing
-    
-    print(f"\n🧪 Processing test subsets: {test_subsets}")
-    
-    successful_subsets = []
-    failed_subsets = []
-    
-    for subset_name in test_subsets:
-        subset_path = os.path.join(base_path, subset_name)
-        
-        if not os.path.exists(subset_path):
-            print(f"❌ Subset path not found: {subset_path}")
-            failed_subsets.append(subset_name)
-            continue
-        
-        print(f"\n🔄 Processing subset: {subset_name}")
-        
-        try:
-            # Process all reactions in this subset
-            eigenvalue_arrays, ref_values, reaction_metadata = process_subset_reactions(
-                subset_name, subset_path
-            )
+
+    # load the pickle containing coulomb matrices for all setnames 
+    with open("final_dict_allsets.pkl", "rb") as f:
+        final_dict = pickle.load(f)
+
+    # 1st loop = loop over setnames (key of final dict), and the coulomb matrices of each setname (inner dict) 
+    # - ignoring PA26 since it has issues, ignoring WATER27 since mihira said 
+    # go through ref file of each setname, parse and return every row of ref file 
+    # for each row of ref file, get respective coulomb matrices and combine based on stochiometry coeffs
+    # if could not combine due to shape missmatch, use a zero matrix as a placeholder
+    # diagonalize the combined matrix 
+    # keep track of largest 'vector of eigenval'
+    # store  all 'vectors of eigenvals' for each setname in a dict
+    # print largest size of 'vector of eigenvals' and which subset/systems it is from 
+    # print summary stats of length of 'vectors of eigenvals' 
+
+    reaction_dicts = {} 
+    sizes = []           #global list to store size of all vectors 
+    max_size = -1
+    max_setname = None
+    max_systems = None
+
+    for setname, innerDict in final_dict.items(): 
+        if setname not in ["PA26", "WATER27"]:  
+            print("parsing ", setname) 
+            innerDict = {k.lower(): v for k, v in innerDict.items()}  #convert to keys to lowercase to prevent name missmatch 
+            setname_path = os.path.join(base_path, setname)           # path for setname folder
+            ref_path = os.path.join(setname_path, "ref")              # path for ref file of the setname
+            rows = parse_ref_file(ref_path)                           # get all rows in the ref file of the setname 
+
+            eigenval_vect_list = []     #list holds all vectors of eigenvals for current setname
+            for systems, coeffs, ref_val in rows:
+                coulomb_matrices = [innerDict[s.lower()] for s in systems]   #convert to lowercase to prevent name missmatch 
+                try:
+                    C = combine_cm(coulomb_matrices, coeffs)    # combine 
+                except ValueError as e:                         #if shape missmatch
+                    S = max(M.shape[0] for M in coulomb_matrices)
+                    print(f"--[{setname}] shape mismatch for systems={systems} coeffs={coeffs} - {e}. Using {S}x{S} zero placeholder.")
+                    C = np.zeros((S, S), dtype=coulomb_matrices[0].dtype)
+
+                #now diagonalizing the combined matrix (C)
+                eigenval_vect = diagonalize_matrix(C)
+                eigenval_vect_list.append(eigenval_vect) # add all 'vector of eigenvals'of this setname to a list
+
+                len_eig = len(eigenval_vect)
+                sizes.append(len_eig)    #adding its size to out global list of sizes 
+                if len_eig > max_size:        #update if larger
+                    max_size = len_eig
+                    max_setname = setname
+                    max_systems = systems
+                
+            # put all 'vectors of eigenvals' for this setname in a dict 
+            reaction_dicts[setname] = eigenval_vect_list
+
+    print("\nDone storing vectors of eigen vals in a Dict....")
+
+    print(f"\n\nLargest eigenvector size: {max_size}")
+    print(f"  setname: {max_setname}")
+    print(f"  systems: {max_systems}")
+
+    print("\n\nstatistics about length of vectors....")
+    print(f"n = {len(sizes)} toal vectors (samples)")
+    print(f"min length= {min(sizes)}")
+    print(f"max length= {max(sizes)}")
+    print(f"mean length= {mean(sizes):.3f}")
+    print(f"median length= {median(sizes)}")
+    print(f"std = {stdev(sizes):.3f}")
+
+
+    available_subsets = reaction_dicts.keys()          
+    print(f"\n\n{len(available_subsets)} available subsets")       #now we have 53 setnames, since 2 were excluded. 
+                                                                  # need to iterate over these in 2nd loop 
+
+    # # 2nd loop 
+    # for subset_name in available_subsets:
+    #     print(f"Processing subset: {subset_name}......")
+    #     subset_path = os.path.join(base_path, subset_name)
+
+    #     try:
+    #         print("hiiii")
+    #         # # Process all reactions in this subset
+    #         # eigenvalue_arrays, ref_values, reaction_metadata = process_subset_reactions(subset_name, subset_path)
             
-            # Create final feature matrix
-            feature_matrix, targets = create_final_features(
-                eigenvalue_arrays, ref_values, reaction_metadata, subset_name
-            )
+    #         # # Create final feature matrix
+    #         # feature_matrix, targets = create_final_features(eigenvalue_arrays, ref_values, reaction_metadata, subset_name)
             
-            # Save results
-            max_eigenvalue_size = feature_matrix.shape[1] - 2  # Subtract metadata features
-            save_results(feature_matrix, targets, reaction_metadata, subset_name, max_eigenvalue_size)
+    #         # # Save results
+    #         # max_eigenvalue_size = feature_matrix.shape[1] - 2  # Subtract metadata features
+    #         # save_results(feature_matrix, targets, reaction_metadata, subset_name, max_eigenvalue_size)
             
-            successful_subsets.append(subset_name)
-            print(f"✅ Completed processing {subset_name}")
+    #         # successful_subsets.append(subset_name)
+    #         # print(f"✅ Completed processing {subset_name}")
             
-        except Exception as e:
-            print(f"❌ Error processing {subset_name}: {e}")
-            failed_subsets.append(subset_name)
-            continue
+    #     except Exception as e:
+    #         print("hiiii")
+    #         continue
     
-    # Summary
-    print(f"\n=== Pipeline Summary ===")
-    print(f"✅ Successful: {len(successful_subsets)} subsets")
-    print(f"❌ Failed: {len(failed_subsets)} subsets")
-    
-    if successful_subsets:
-        print(f"✅ Processed: {', '.join(successful_subsets)}")
-    if failed_subsets:
-        print(f"❌ Failed: {', '.join(failed_subsets)}")
-    
-    print(f"\n🎉 Pipeline completed!")
-    print("Ready for Random Forest training! 🌲🤖")
+    print(f"\nPipeline completed!")
 
 
 if __name__ == "__main__":

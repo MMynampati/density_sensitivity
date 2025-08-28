@@ -5,17 +5,17 @@
 ### 1. Dataset Structure & Access
 - [x] Write structure to go into each subset folder
 - [x] Fix hardcoded data paths in scripts
-- [ ] Verify access to all 55 molecular datasets
-- [ ] Verify ref files exist for all 55 folders. 
+- [x] Verify access to all 55 molecular datasets
+- [x] Verify ref files exist for all 55 folders. 
 
 ### 2. Coulomb Matrix Generation  
 - [x] Make Coulomb matrices for each molecule (ACONF subset complete)
-- [ ] Extend Coulomb matrix generation to all remaining 54 subsets
-- [ ] Validate matrix generation for all molecule types
+- [x] Extend Coulomb matrix generation to all remaining 54 subsets
+- [x] Validate matrix generation for all molecule types
 
 ### 3. Reaction Matrix Creation
 - [x] Create combined reactant-product matrix (basic implementation)
-- [ ] Optimize combined matrix creation for all datasets
+- [x] Optimize combined matrix creation for all datasets
 - [x] Handle edge cases in stoichiometry combinations
 
 ### 4. Matrix Compression

@@ -3,6 +3,7 @@ import os
 import numpy as np 
 import pandas as pd
 
+
 def parse_ref_line(line: str):
     """
     gets a single line in the ref file,
@@ -131,49 +132,69 @@ def combine_cm(matrices, coeffs) -> np.ndarray:
     return P - N
 
 BASE_PATH = "......./new_structures"
+# BASE_PATH = "/Users/nedamohseni/Downloads/new_structures"
 
-
-# dict of coulomb matrices (rn only aconf)
 if __name__ == "__main__":
 
-    with open("final_dict.pkl", "rb") as f:
+   # dict of coulomb matrices (all setnames)
+    with open("final_dict_allsets.pkl", "rb") as f:
         final_dict = pickle.load(f)
 
-    np.set_printoptions(precision=3, suppress=True, linewidth=200)
+    print(len(final_dict.keys()))
+
+    np.set_printoptions(precision=3, suppress=True, linewidth=200)   # for better visuals
     
-    ## for checking matrix operations
-    # print(final_dict['BSR36']['c2h6'].shape)
-    # print(final_dict['BSR36']['c2h6'])
-    # print("\n\n")
-    # print(final_dict['BSR36']['h1'].shape)
-    # print(final_dict['BSR36']['h1'])
-    # print("\n\n")
-    # print(final_dict['BSR36']['ch4'].shape)
-    # print(final_dict['BSR36']['ch4'])
+    # for checking matrix operations
+    print(final_dict['BSR36']['c2h6'].shape)
+    print(final_dict['BSR36']['c2h6'])
+    print("\n\n")
+    print(final_dict['BSR36']['h1'].shape)
+    print(final_dict['BSR36']['h1'])
+    print("\n\n")
+    print(final_dict['BSR36']['ch4'].shape)
+    print(final_dict['BSR36']['ch4'])
 
-    # loop over setnames (key of final dict) (now, only aconf)
+    # loop over setnames (key of final dict) (setnames)
     reaction_dicts = {} 
-    for setname, innerDict in final_dict.items():  
-        setname_path = os.path.join(BASE_PATH, setname)  # path for setname folder
-        ref_path = os.path.join(setname_path, "ref")     # path for ref file of the setname
-        rows = parse_ref_file(ref_path)                  # get all rows in the ref file of the setname 
+    for setname, innerDict in final_dict.items(): 
+        if setname not in ["PA26"]:  #there are issues in PA26, i'm skipping it 
+            print(setname) 
+            innerDict = {k.lower(): v for k, v in innerDict.items()}
+            setname_path = os.path.join(BASE_PATH, setname)  # path for setname folder
+            ref_path = os.path.join(setname_path, "ref")     # path for ref file of the setname
+            rows = parse_ref_file(ref_path)                  # get all rows in the ref file of the setname 
 
-        combined_matrices = []
-        refs = []
+            combined_matrices = []
+            refs = []
 
-        for systems, coeffs, ref_val in rows:
-            coulomb_matrices = [innerDict[s] for s in systems]    # get Coulomb Matricess for systems of this row
-            C = combine_cm(coulomb_matrices, coeffs)              # combine 
-            combined_matrices.append(C)                           # add all matrices of this setname to a list
-            refs.append(ref_val)                                  # add all ref values of this setname , not sure if they're useful ????
+            for systems, coeffs, ref_val in rows:
+                # print(systems,coeffs)
+                coulomb_matrices = [innerDict[s.lower()] for s in systems]
+                try:
+                    C = combine_cm(coulomb_matrices, coeffs)    # combine 
+                except ValueError as e:
+                    S = max(M.shape[0] for M in coulomb_matrices)
+                    print(f"[{setname}] shape mismatch for systems={systems} coeffs={coeffs} - {e}. Using {S}x{S} zero placeholder.")
+                    C = np.zeros((S, S), dtype=coulomb_matrices[0].dtype)
+
+                combined_matrices.append(C)                           # add all matrices of this setname to a list
+                refs.append(ref_val)                                  # add all ref values of this setname , not sure if they're useful ????
+                # break
 
 
-        # put all combined matrices in a dict 
-        reaction_dicts[setname] = {"matrices":  combined_matrices, "refs": refs} 
+            # put all combined matrices in a dict 
+            reaction_dicts[setname] = {"matrices":  combined_matrices, "refs": refs} 
 
 
-    # print("\n\n\n", reaction_dicts['ACONF']["matrices"][0].shape)   #pring first row of aconf 
-    # print(reaction_dicts['ACONF']["matrices"][0])   #pring first row of aconf 
+    print("\n\n\n", reaction_dicts['BSR36']["matrices"][0].shape)   #print first row of aconf 
+    print(reaction_dicts['BSR36']["matrices"][0])   #print first row of aconf 
+
+    print("\n\n\n", reaction_dicts['TAUT15']["matrices"][0].shape)   #print first row of aconf 
+    print(reaction_dicts['TAUT15']["matrices"][0])   #print first row of aconf 
+
+    from diagonalize_matrices import diagonalize_matrix
+    print("\n\nafter diagonalizing: ")
+    print(diagonalize_matrix(reaction_dicts['TAUT15']["matrices"][0]))
 
 
     # this is how data  (combined matrices) is stored
