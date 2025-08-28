@@ -52,12 +52,36 @@ def _block_diag_repeat(M: np.ndarray, k: int, sign: int) -> np.ndarray:
         out[i*n:(i+1)*n, i*n:(i+1)*n] = sign * M
     return out
 
+def _block_diag_many(blocks):
+    """Takes matrices with same stoichiometry coeff sign (+) or (-) and combines them together.
+    Works in case of when we have 3 systems/coeffs in a line, e.g. 2 + coeff, 1 - coeff 
+    or 2 - coeff, 1 + coeff.
+    """
+    # if a single matrix for + or -, return itself
+    if len(blocks) == 1: 
+        return blocks[0]
+
+    # adds shape of matrices with same sign 
+    n = sum(b.shape[0] for b in blocks)
+    out = np.zeros((n, n), dtype=blocks[0].dtype)
+
+    off = 0
+    for b in blocks:
+        m = b.shape[0]
+        out[off:off+m, off:off+m] = b
+        off += m
+
+    return out
+
 def combine_cm(matrices, coeffs) -> np.ndarray:
     """combine reactant(-) and product(+) matrices.
     if shapes are same and stochiometric coeffs are all +1/-1, calculates a weightd sum 
     (scales reactant matrices by -1), adds it to product matrix(es)
-    else if diff shape & stochiometric coeffs are not +1/-1, does block diagonal duplication
-    then combines them together
+
+    else if diff shape OR stochiometric coeffs are not +1/-1:
+    separates matrices with + coeff vs - coeff and stores in list 
+    if multiple + matirces : combines all + matrices (adds them as block diagonals)
+    if multiple - matrices : combines all - matrices (adds them as block diagonals)
 
     output: 
           final combined matrix of a single row in ref file (product + (-)(reactant))
@@ -71,30 +95,61 @@ def combine_cm(matrices, coeffs) -> np.ndarray:
         for M, c in zip(matrices, coeffs):
             acc += c * M
         return acc
+    
+    # if not 
+    # append matrix to eight + matrix list or - matrix list based on respective coeff sign
+    pos_blocks, neg_blocks = [], []
+    for M, c in zip(matrices, coeffs):
+        if c == 0:
+            continue
+        k = abs(c)
+        E = _block_diag_repeat(M, k, +1)  # repeat only; no sign here
+        # print(E.shape)
+        # print(E)
+        (pos_blocks if c > 0 else neg_blocks).append(E)
 
-    # if not:  block-diagonal duplication; apply sign only
-    blocks = [_block_diag_repeat(M, abs(c), 1 if c > 0 else -1) for M, c in zip(matrices, coeffs)]
-    N = sum(B.shape[0] for B in blocks)
-    out = np.zeros((N, N), dtype=blocks[0].dtype)
-    off = 0
-    for B in blocks:
-        n = B.shape[0]
-        out[off:off+n, off:off+n] = B
-        off += n
-    return out
+    if not pos_blocks or not neg_blocks:
+        raise ValueError("Ref line is unbalanced: need at least one + and one - term.")
 
+    # pack each side
+    # if multiple matirces for + or - , add them as block diagonal 
+    # at the end there will be 1 matrix of + matrices, one matrix of - matrices, 
+    # each will have a shape that is sum of shape of matrices its built from 
+    P = _block_diag_many(pos_blocks)
+    N = _block_diag_many(neg_blocks)
 
+    # print("\nshape of p : ", P.shape)
+    # print(P)
+    # print("\nshape of N : ", N.shape)
+    # print(N)
+    # print("\n\n\n")
 
+    if P.shape != N.shape:
+        raise ValueError(f"Shape mismatch after packing sides: P{P.shape} vs N{N.shape}. ")
 
+    #finally return difference
+    return P - N
 
 BASE_PATH = "......./new_structures"
 
 
 # dict of coulomb matrices (rn only aconf)
 if __name__ == "__main__":
-    # Execution code - only runs when script is called directly
+
     with open("final_dict.pkl", "rb") as f:
         final_dict = pickle.load(f)
+
+    np.set_printoptions(precision=3, suppress=True, linewidth=200)
+    
+    ## for checking matrix operations
+    # print(final_dict['BSR36']['c2h6'].shape)
+    # print(final_dict['BSR36']['c2h6'])
+    # print("\n\n")
+    # print(final_dict['BSR36']['h1'].shape)
+    # print(final_dict['BSR36']['h1'])
+    # print("\n\n")
+    # print(final_dict['BSR36']['ch4'].shape)
+    # print(final_dict['BSR36']['ch4'])
 
     # loop over setnames (key of final dict) (now, only aconf)
     reaction_dicts = {} 
@@ -105,21 +160,25 @@ if __name__ == "__main__":
 
         combined_matrices = []
         refs = []
+
         for systems, coeffs, ref_val in rows:
             coulomb_matrices = [innerDict[s] for s in systems]    # get Coulomb Matricess for systems of this row
             C = combine_cm(coulomb_matrices, coeffs)              # combine 
             combined_matrices.append(C)                           # add all matrices of this setname to a list
             refs.append(ref_val)                                  # add all ref values of this setname , not sure if they're useful ????
 
-            #add metadata from info files here? 
 
         # put all combined matrices in a dict 
         reaction_dicts[setname] = {"matrices":  combined_matrices, "refs": refs} 
 
 
+    # print("\n\n\n", reaction_dicts['ACONF']["matrices"][0].shape)   #pring first row of aconf 
+    # print(reaction_dicts['ACONF']["matrices"][0])   #pring first row of aconf 
+
+
     # this is how data  (combined matrices) is stored
     # {"aconf" : {"matrices":  [matrix 1, 2, ... , matrix 15]
-    #                 "refs": [ref1, ref2, ....., ref15] }}
+    #                 "refs": [ref1, ref2, ....., ref15] }}s
 
 
     # # prints all the combined matrices : 
@@ -127,18 +186,13 @@ if __name__ == "__main__":
     #     print(v["matrices"])
 
 
-    # storing them into pandas:
-    df = pd.DataFrame({
-        "matrix": reaction_dicts["ACONF"]["matrices"],  # list of np.ndarrays
-        "ref":    reaction_dicts["ACONF"]["refs"],      # list of floats
-    })
+    # # storing them into pandas:
+    # df = pd.DataFrame({
+    #     "matrix": reaction_dicts["ACONF"]["matrices"],  # list of np.ndarrays
+    #     "ref":    reaction_dicts["ACONF"]["refs"],      # list of floats
+    # })
 
-    print(df.head())  
+    # print(df.head())  
 
-
-    # TODO : 
-    # diagonalize the matrix and turn it into 1d / pad them w zeros
-    # add meta data 
-    # add feauture labels 
 
 

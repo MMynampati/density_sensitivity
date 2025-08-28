@@ -61,3 +61,14 @@ def create_dict(setname_path, save_heatmaps=False):
 
 
 
+BASE_PATH = "....../new_structures"
+setname_path = os.path.join(BASE_PATH, "ACONF")
+
+final_dict = create_dict(setname_path, save_heatmaps=False)
+
+
+# save dictionary as pickle
+with open(os.path.join(current_dir, "final_dict.pkl"), "wb") as f:
+    pickle.dump(final_dict, f)
+
+# print(final_dict)
