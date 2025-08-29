@@ -14,3 +14,4 @@ all_v2_SWARM.csv
 __pycache__/
 *.pyc
 *.pyo
+reaction_vectors.csv

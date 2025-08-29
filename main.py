@@ -279,7 +279,6 @@ def main():
 
     # Configuration
     base_path = "new_structures"
-   
 
     # load the pickle containing coulomb matrices for all setnames 
     with open("final_dict_allsets.pkl", "rb") as f:
@@ -310,12 +309,16 @@ def main():
             setname_path = os.path.join(base_path, setname)           # path for setname folder
             ref_path = os.path.join(setname_path, "ref")              # path for ref file of the setname
             rows = parse_ref_file(ref_path)                           # get all rows in the ref file of the setname 
+            info_path = os.path.join(setname_path, "info")
+            info_dict = parse_info_file(info_path)
 
             eigenval_vect_list = []     #list holds all vectors of eigenvals for current setname
             refs = []                   # list of all refs for curr setname
             systems_list = []           # list of all system pairs for curr setname
             coeffs_list = []            # list of all coeffs for curr setname
             sizes_list = []             # list of length of each eigenvalue vector for current setname
+            charge_list = []
+            spin_list = []
 
             for systems, coeffs, ref_val in rows:
                 coulomb_matrices = [innerDict[s.lower()] for s in systems]   #convert to lowercase to prevent name missmatch 
@@ -337,16 +340,24 @@ def main():
                     max_setname = setname
                     max_systems = systems
 
+                #charge/mult 
+                charge, spin_mult = get_product_properties(systems, coeffs, info_dict)
+                # print(coeffs)
+                print(charge, spin_mult)
+
                 # meta data 
                 refs.append(ref_val)
                 systems_list.append(systems)            
                 coeffs_list.append(coeffs)              
                 sizes_list.append(len(eigenval_vect))   
+                charge_list.append(charge)
+                spin_list.append(spin_mult)
 
             # put all 'vectors of eigenvals' and metadata for this setname in a dict 
             reaction_dicts[setname] = {"eigenval_vectors": eigenval_vect_list, "refs": refs,
                                         "systems": systems_list, "coeffs": coeffs_list,           
-                                        "sizes": sizes_list }
+                                        "sizes": sizes_list, 
+                                        "charge" : charge_list, "spin" : spin_list }
 
     print("\nDone storing vectors of eigen vals in a Dict....")
     # this is how data is stored
@@ -354,7 +365,10 @@ def main():
     #                 "refs": [ref1, ref2, ....., ref15] 
     #                 "systems": [systems1, 2, ..., systems15 ]
     #                 "coeffs": [coeffs1, 2, ..., coeffs15 ]
-    #                 "sizes": [size1, 2, ..., size15 ]}}
+    #                 "sizes": [size1, 2, ..., size15 ]
+    #                 "charges": [charge1, 2, ..., charge15 ]
+    #                 "spin": [spin1, 2, ..., spin15 ]
+    #}}
 
     print(f"\n\nLargest eigenvector size: {max_size}")
     print(f"  setname: {max_setname}")
@@ -366,30 +380,31 @@ def main():
     print(f"max length= {max(all_sizes)}")
     print(f"mean length= {mean(all_sizes):.3f}")
     print(f"median length= {median(all_sizes)}")
-    print(f"std = {stdev(all_sizes):.3f}")
+    print(f"std = {stdev(all_sizes):.3f}\n")
 
-    # # uncomment to make the pandas df
-    # rows = []
-    # for setname, d in reaction_dicts.items():
-    #     # skip any non-set keys if you added them (e.g., "_index")
-    #     if not isinstance(d, dict) or "eigenval_vectors" not in d:
-    #         continue
+    # to make the pandas df
+    rows = []
+    for setname, d in reaction_dicts.items():
+        if not isinstance(d, dict) or "eigenval_vectors" not in d:
+            continue
 
-    #     n = len(d["eigenval_vectors"])
-    #     for i in range(n):
-    #         rows.append({ "setname": setname,
-    #                     "idx_within_set": i,
-    #                     "vector": d["eigenval_vectors"][i],  # numpy array (object column)
-    #                     "size": d["sizes"][i],
-    #                     "ref": d["refs"][i],
-    #                     "systems": d["systems"][i],
-    #                     "coeffs": d["coeffs"][i] })
+        n = len(d["eigenval_vectors"])
+        for i in range(n):
+            rows.append({   "setname": setname,
+                            "idx_within_set": i,
+                            "vector": d["eigenval_vectors"][i],  
+                            "size": d["sizes"][i],
+                            "ref": d["refs"][i],
+                            "systems": d["systems"][i],
+                            "coeffs": d["coeffs"][i], 
+                            "charges": d["charge"][i], 
+                            "spin": d["spin"][i] })
 
-    # df = pd.DataFrame(rows)
-    # print(df.head())
+    df = pd.DataFrame(rows)
+    print(df.head())
 
-    # # to store as a csv
-    # #df.to_csv("reaction_vectors.csv", index=False)
+    # to store as a csv
+    # df.to_csv("reaction_vectors.csv", index=False)
 
 
     available_subsets = reaction_dicts.keys()          
@@ -412,10 +427,7 @@ def main():
     #         # # Save results
     #         # max_eigenvalue_size = feature_matrix.shape[1] - 2  # Subtract metadata features
     #         # save_results(feature_matrix, targets, reaction_metadata, subset_name, max_eigenvalue_size)
-            
-    #         # successful_subsets.append(subset_name)
-    #         # print(f"✅ Completed processing {subset_name}")
-            
+        
     #     except Exception as e:
     #         print("hiiii")
     #         continue

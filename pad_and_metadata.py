@@ -96,6 +96,9 @@ def get_product_properties(systems: List[str], coeffs: List[int], info_data: Dic
         
     Returns:
         Tuple of (charge, spin_multiplicity) for the product molecule
+
+    # NOTE: this function need to handle cases when there is multiple products (- coefficients)
+    # right now it only retrun charge & mult of first one 
     """
     
     # Find the system with negative coefficient (the product)
