@@ -403,34 +403,97 @@ def main():
     df = pd.DataFrame(rows)
     print(df.head())
 
-    # to store as a csv
-    # df.to_csv("reaction_vectors.csv", index=False)
+    #to store as a csv
+    df.to_csv("reaction_vectors.csv", index=False)
 
 
     available_subsets = reaction_dicts.keys()          
     print(f"\n\n{len(available_subsets)} available subsets")       #now we have 53 setnames, since 2 were excluded. 
                                                                   # need to iterate over these in 2nd loop 
 
-    # # 2nd loop 
-    # for subset_name in available_subsets:
-    #     print(f"Processing subset: {subset_name}......")
-    #     subset_path = os.path.join(base_path, subset_name)
-
-    #     try:
-    #         print("hiiii")
-    #         # # Process all reactions in this subset
-    #         # eigenvalue_arrays, ref_values, reaction_metadata = process_subset_reactions(subset_name, subset_path)
-            
-    #         # # Create final feature matrix
-    #         # feature_matrix, targets = create_final_features(eigenvalue_arrays, ref_values, reaction_metadata, subset_name)
-            
-    #         # # Save results
-    #         # max_eigenvalue_size = feature_matrix.shape[1] - 2  # Subtract metadata features
-    #         # save_results(feature_matrix, targets, reaction_metadata, subset_name, max_eigenvalue_size)
+    feature_matrix = []
+    targets = []
+    
+    # Load SWARM data for S values
+    swarm_df = pd.read_csv("../density_sensitivity/all_v2_SWARM.csv")
+    pbe_df = swarm_df[swarm_df['calctype'] == 'PBE'].copy()                 #filter to only PBE data
+    
+    # 2nd loop 
+    for index, row in df.iterrows():
+        setname = row['setname']
+        idx_within_set = row['idx_within_set']
+        eigenvalues = row['vector']
+        charge = row['charges']
+        spin = row['spin']
         
-    #     except Exception as e:
-    #         print("hiiii")
-    #         continue
+        # 1. Pad eigenvalue vector to max_size (144)
+        padded_vector = np.zeros(max_size)
+        padded_vector[:len(eigenvalues)] = eigenvalues
+        
+        # 2. Append charge and spin to create feature vector
+        feature_vector = np.append(padded_vector, [charge, spin])
+        feature_matrix.append(feature_vector)
+        
+        # 3. Get S value from SWARM file
+        mask = (pbe_df['setname'] == setname) & (pbe_df['rxnidx'] == idx_within_set + 1)  # +1 because rxnidx is 1-indexed in SWARM file
+        matches = pbe_df[mask]
+        
+        if len(matches) == 0:
+            print(f"Warning: No SWARM entry found for {setname} reaction {idx_within_set + 1}")
+            # Use a default value or skip this sample
+            s_value = 0.0  # Default to not sensitive
+        else:
+            s_value = matches.iloc[0]['S']
+        
+        # 4. Create binary target (S >= 2.0 is sensitive)
+        binary_target = 1 if s_value >= 2.0 else 0
+        targets.append(binary_target)
+        
+        if index < 5:  # Print first few for verification
+            print(f"Sample {index}: {setname} rxn {idx_within_set + 1}, S={s_value:.4f} -> {'SENSITIVE' if binary_target else 'NOT SENSITIVE'}")
+    
+    # Convert to numpy arrays
+    feature_matrix = np.array(feature_matrix)
+    targets = np.array(targets)
+    
+    print(f"\nFinal feature matrix shape: {feature_matrix.shape}")
+    print(f"Final targets shape: {targets.shape}")
+    print(f"Class distribution: {np.sum(targets)} sensitive, {len(targets) - np.sum(targets)} not sensitive")
+    
+    # Save the complete dataset
+    np.save("complete_features.npy", feature_matrix)
+    np.save("complete_targets.npy", targets)
+    print("✅ Saved complete dataset: complete_features.npy, complete_targets.npy")
+
+
+    #BALANCE THE DATASET
+   # Create a 1:1 balanced dataset
+    num_sensitive = np.sum(targets)
+    num_not_sensitive = len(targets) - num_sensitive
+    min_class_size = min(num_sensitive, num_not_sensitive)
+
+    sensitive_indices = np.where(targets == 1)[0]
+    not_sensitive_indices = np.where(targets == 0)[0]
+
+    #randomly sample sensitive indices to match the number of not sensitive indices
+    sensitive_indices = np.random.choice(sensitive_indices, size=min_class_size, replace=False)
+    not_sensitive_indices = np.random.choice(not_sensitive_indices, size=min_class_size, replace=False)
+
+    #combine indices
+    balanced_indices = np.concatenate([sensitive_indices, not_sensitive_indices])
+    balanced_feature_matrix = feature_matrix[balanced_indices]
+    balanced_targets = targets[balanced_indices]
+
+    print(f"Balanced feature matrix shape: {balanced_feature_matrix.shape}")
+    print(f"Balanced targets shape: {balanced_targets.shape}")
+    print(f"Class distribution: {np.sum(balanced_targets)} sensitive, {len(balanced_targets) - np.sum(balanced_targets)} not sensitive")
+
+    #save balanced dataset
+    np.save("balanced_features.npy", balanced_feature_matrix)
+    np.save("balanced_targets.npy", balanced_targets)
+    print("✅ Saved balanced dataset: balanced_features.npy, balanced_targets.npy")
+    
+    
     
     print(f"\nPipeline completed!")
 

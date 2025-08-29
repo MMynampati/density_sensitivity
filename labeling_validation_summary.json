@@ -1,0 +1,13 @@
+{
+  "total_samples": 1452,
+  "sensitive_count": 483,
+  "not_sensitive_count": 969,
+  "s_value_stats": {
+    "min": 0.0013,
+    "max": 50.7284,
+    "mean": 2.946831336088154,
+    "median": 0.9018999999999999,
+    "std": 5.2311570686437125
+  },
+  "missing_swarm_entries": 0
+}

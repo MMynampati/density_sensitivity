@@ -20,14 +20,20 @@ from preprocess import parse_ref_file, combine_cm
 def diagonalize_matrix(matrix: np.ndarray) -> np.ndarray:
     """
     Diagonalize an nxn matrix and return eigenvalues as a 1D array of length n.
+    note - not technically a diagonalization (diagonalization is a process of finding the eigenvalues 
+    AND eigenvectors of a matrix), but we only care about the eigenvalues for our use case
     
     Args:
         matrix: nxn numpy array to diagonalize
         
     Returns:
-        1D array of eigenvalues in ascending order     *NOTE: check that function returns same "order" everytime 
+        1D array of eigenvalues in ascending order     *NOTE: updated so ordering is deterministic
+
+    Notes: 
+        -   eigh returns eigenvalues in ascending order (as opposed to the paper, which sorts in desc) 
+        -   paper takes absolute value of eigenvalues, but we don't
     """
-    # Check symmetry
+    #   check that matrix is symmetric
     if not np.allclose(matrix, matrix.T, atol=1e-10):
         raise ValueError("Matrix is not symmetric. Eigenvalues may not be real.")
     

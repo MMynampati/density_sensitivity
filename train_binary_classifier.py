@@ -191,13 +191,7 @@ def evaluate_binary_classifier(model: RandomForestClassifier, X_test: np.ndarray
     
     # Make predictions
     y_pred = model.predict(X_test)
-    
-    # Handle case where model only learned one class
-    try:
-        y_pred_proba = model.predict_proba(X_test)[:, 1]  # Probability of positive class
-    except IndexError:
-        # Model only learned one class (all predictions are the same)
-        y_pred_proba = np.zeros(len(y_test))  # All probabilities are 0 for positive class
+    y_pred_proba = model.predict_proba(X_test)[:, 1]  # Probability of positive class
     
     # Calculate metrics
     accuracy = accuracy_score(y_test, y_pred)
@@ -221,17 +215,8 @@ def evaluate_binary_classifier(model: RandomForestClassifier, X_test: np.ndarray
     # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)
     print(f"\n📊 Confusion Matrix:")
-    if cm.shape == (1, 1):
-        # Only one class present
-        if np.unique(y_test)[0] == 0:
-            print(f"   True Negative: {cm[0,0]}, False Positive: 0")
-            print(f"   False Negative: 0, True Positive: 0")
-        else:
-            print(f"   True Negative: 0, False Positive: 0")
-            print(f"   False Negative: 0, True Positive: {cm[0,0]}")
-    else:
-        print(f"   True Negative: {cm[0,0]}, False Positive: {cm[0,1]}")
-        print(f"   False Negative: {cm[1,0]}, True Positive: {cm[1,1]}")
+    print(f"   True Negative: {cm[0,0]}, False Positive: {cm[0,1]}")
+    print(f"   False Negative: {cm[1,0]}, True Positive: {cm[1,1]}")
     
     return metrics
 
