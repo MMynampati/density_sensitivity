@@ -343,7 +343,7 @@ def main():
                 #charge/mult 
                 charge, spin_mult = get_product_properties(systems, coeffs, info_dict)
                 # print(coeffs)
-                print(charge, spin_mult)
+                # print(charge, spin_mult)
 
                 # meta data 
                 refs.append(ref_val)
