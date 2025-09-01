@@ -15,3 +15,42 @@ __pycache__/
 *.pyc
 *.pyo
 reaction_vectors.csv
+
+# Large generated files
+*.npy
+final_dict*.pkl
+*_model.pkl
+*_features.npy
+*_targets.npy
+*_complete.pkl
+
+# Model outputs
+*_binary_classifier.pkl
+*_random_forest_model.pkl
+*_model_metrics.pkl
+
+# Large data files
+reaction_vectors.csv
+balanced_features.npy
+complete_features.npy
+optimized_features.npy
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp

@@ -455,7 +455,10 @@ def main():
     # Convert to numpy arrays
     feature_matrix = np.array(feature_matrix)
     targets = np.array(targets)
-    
+
+    print(feature_matrix[:5])
+    print(targets[:5])
+
     print(f"\nFinal feature matrix shape: {feature_matrix.shape}")
     print(f"Final targets shape: {targets.shape}")
     print(f"Class distribution: {np.sum(targets)} sensitive, {len(targets) - np.sum(targets)} not sensitive")

@@ -38,7 +38,10 @@ def diagonalize_matrix(matrix: np.ndarray) -> np.ndarray:
         raise ValueError("Matrix is not symmetric. Eigenvalues may not be real.")
     
     #   eigh returns eigenvalues in ascending order
-    eigenvalues = np.linalg.eigh(matrix)[0]         
+    eigenvalues = np.linalg.eigh(matrix)[0]  
+
+    #TRYING - sort in descending order
+    eigenvalues = np.sort(eigenvalues)[::-1]
     
     # Handle complex eigenvalues - take real part for now
     # (Coulomb matrices should be real symmetric, so eigenvalues should be real)  
@@ -46,7 +49,9 @@ def diagonalize_matrix(matrix: np.ndarray) -> np.ndarray:
 
     #if we find non-real parts to a eigenvalue something has probably gone wrong- so then throw an error
     if np.iscomplexobj(eigenvalues):
-        eigenvalues = np.real(eigenvalues)
+        if np.max(np.abs(eigenvalues.imag)) > 1e-10:           #maybe want to change threshold
+            raise ValueError("Significant imaginary part in eigenvalues!")
+        eigenvalues = eigenvalues.real
 
     
     return eigenvalues
