@@ -85,6 +85,7 @@ def parse_info_file(info_path: str) -> Dict[str, Dict]:
     
     return system_info
 
+#old function
 def get_product_properties(systems: List[str], coeffs: List[int], info_data: Dict) -> Tuple[int, int]:
     """
     Get charge and spin of the product molecule (negative coefficient system).
@@ -118,6 +119,34 @@ def get_product_properties(systems: List[str], coeffs: List[int], info_data: Dic
     spin_mult = info_data[product_system]['spin_multiplicity']
     
     return charge, spin_mult
+
+# # NEW FUNCTIONS 
+# def get_product_properties(systems: List[str], coeffs: List[int], info_data: Dict) -> Tuple[int, int]:
+#     """
+#     Get charge and spin of the product molecule (negative coefficient system).
+#     Args:
+#         systems: List of system names in reaction
+#         coeffs: List of stoichiometric coefficients  
+#         info_data: Dictionary from parse_info_file with charge/spin data
+        
+#     Returns:
+#         Tuple of (charge, spin_multiplicity) for all product molecules combined
+
+#     # sum the charges of all - systems 
+#     # sum the spin of all - systems
+#     """
+#     total_charge = 0
+#     total_spin = 0
+
+#     for system, coeff in zip(systems, coeffs):
+#         if coeff < 0:  # product
+#             if system not in info_data:
+#                 raise ValueError(f"Product system {system} not found in info data")
+            
+#             total_charge += info_data[system]['charge']
+#             total_spin   += info_data[system]['spin_multiplicity']
+
+#     return total_charge, total_spin
 
 
 def get_swarm_binary_labels(subset_name: str, reaction_metadata: List[Dict], threshold: float = 2.0) -> Tuple[List[bool], List[float]]:

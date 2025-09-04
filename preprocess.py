@@ -44,6 +44,18 @@ def parse_ref_file(ref_path: str):
     return rows
 
 
+def _sort_by_row_l2(M: np.ndarray) -> np.ndarray:
+    """
+    Symmetrically sort matrix M by descending row L2 norm.
+    Applies the same permutation to rows and columns.
+    """
+    # row L2 norms
+    norms = np.linalg.norm(M, axis=1)
+    # sort by descending order, stable to preserve relative order on ties
+    order = np.argsort(-norms, kind="mergesort")
+    return M[order][:, order]
+
+
 
 def _block_diag_repeat(M: np.ndarray, k: int, sign: int) -> np.ndarray:
     """k copies of sign*M on a block diagonal (no magnitude scaling)."""
@@ -124,6 +136,10 @@ def combine_cm(matrices, coeffs) -> np.ndarray:
     # print("\nshape of N : ", N.shape)
     # print(N)
     # print("\n\n\n")
+
+    # symmetric sort by row L2 norm on p & N before subtraction
+    P = _sort_by_row_l2(P)
+    N = _sort_by_row_l2(N)
 
     if P.shape != N.shape:
         raise ValueError(f"Shape mismatch after packing sides: P{P.shape} vs N{N.shape}. ")
