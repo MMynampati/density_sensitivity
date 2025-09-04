@@ -40,7 +40,7 @@ density_sensitivity/
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/MMynampati/density_sensitivity
 cd density_sensitivity
 
 # Install dependencies
@@ -62,18 +62,9 @@ python train_random_forest.py
 
 ## 📊 Current Status
 
-- ✅ Complete pipeline working on ACONF dataset
+- ✅ expanded to all 55 molecular datasets
 - ✅ Binary classification model trained and evaluated
-- ✅ Feature importance analysis implemented
-- 🔄 Ready to expand to all 55 molecular datasets
-
-## 🧪 Supported Datasets
-
-Currently tested on:
-- **ACONF**: Conformational analysis dataset
-- **ADIM6**: Dimerization dataset  
-- **AHB21**: Hydrogen bonding dataset
-
+  
 ## 📈 Model Performance
 
 The binary classifier achieves:
@@ -97,18 +88,10 @@ Key parameters can be adjusted in the main scripts:
 - `dscribe`: Molecular descriptors
 - `matplotlib`, `seaborn`: Visualization
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
 ## 📄 License
 
 [Add your license information here]
 
 ## 🙏 Acknowledgments
 
-- Burke Lab
+- Burke Group @ UCI 
