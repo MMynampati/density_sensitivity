@@ -4,19 +4,22 @@ Main pipeline for density sensitivity ML analysis.
 
 NEW:
 This script implements the complete workflow:
-1. Load coulomb matrices from the dictionary    ----------------> done
-2. Go through the subsets, and for each reaction in each subset:  ----------------> done
-    a) combine matrices according to stoichiometry    ----------------> done
-    b) diagonalize the combined matrix     ----------------> done
-    c) update max size if exceeded   ----------------> done
-3. Store all eigenvalue vectors in a dictionary    ----------------> done
+1. Load coulomb matrices from the dictionary 
+2. 1st loop - Go through the subsets, and for each reaction in each subset:  
+    a) combine matrices according to stoichiometry    
+    b) diagonalize the combined matrix   
+    c) update max size if exceeded  
+    d)append meta data (charge/spin/size of eigenvalue vectoe )
+3. Store all in a dictionary 
 
-4. Go through the subsets again, and for each reaction in each subset:
+4. 2nd loop - Go through the subsets again, and for each reaction in each subset:
     a) pad [eigenvalue vector] with zeros to the max size
-    b) append charge and mult of product
-    c) add a label for the reaction 
+    b) append charge and mult of product and eigenvalue vector size
+    c) add a boolean label for the reaction from SWARM csv
     d) add to the final dataframe
-5. Get training 
+
+5. Get complete feature matrix and target labels
+6. optional - get balanced features and target labels
 """
 import os
 import numpy as np
@@ -41,6 +44,7 @@ def main():
 
     # Configuration
     base_path = "new_structures"
+    #base_path = "/Users/nedamohseni/Downloads/new_structures"
 
     # load the pickle containing coulomb matrices for all setnames 
     with open("final_dict_allsets.pkl", "rb") as f:
@@ -104,7 +108,7 @@ def main():
                     max_systems = systems
 
                 #charge/mult 
-                charge, spin_mult = get_product_properties(systems, coeffs, info_dict) 
+                charge, spin_mult = get_product_properties(systems, coeffs, info_dict)  #get charge and spin for this row 
                 # print(coeffs)
                 # print(systems, coeffs)
                 # print(charge, spin_mult)
@@ -168,7 +172,7 @@ def main():
     print(df.head())
 
     #to store as a csv
-    df.to_csv("reaction_vectors.csv", index=False)
+    df.to_csv("Descriptor1/reaction_vectors.csv", index=False)
 
 
     available_subsets = reaction_dicts.keys()          
@@ -180,6 +184,7 @@ def main():
     
     # Load SWARM data for S values
     swarm_df = pd.read_csv("../density_sensitivity/all_v2_SWARM.csv")
+    #swarm_df = pd.read_csv("/Users/nedamohseni/Desktop/density_sensitivity/all_v2_SWARM.csv")
 
     pbe_df = swarm_df[swarm_df['calctype'] == 'PBE'].copy()                 #filter to only PBE data
     
@@ -190,13 +195,14 @@ def main():
         eigenvalues = row['vector']
         charge = row['charges']
         spin = row['spin']
+        size = row['size']
         
         # 1. Pad eigenvalue vector to max_size (144)
         padded_vector = np.zeros(max_size)
         padded_vector[:len(eigenvalues)] = eigenvalues
         
-        # 2. Append charge and spin to create feature vector
-        feature_vector = np.append(padded_vector, [charge, spin])
+        # 2. Append charge and spin and size to create feature vector
+        feature_vector = np.append(padded_vector, [charge, spin,size])
         feature_matrix.append(feature_vector)
         
         # 3. Get S value from SWARM file
@@ -229,12 +235,12 @@ def main():
     print(f"Class distribution: {np.sum(targets)} sensitive, {len(targets) - np.sum(targets)} not sensitive")
     
     # Save the complete dataset
-    np.save("complete_features.npy", feature_matrix)
-    np.save("complete_targets.npy", targets)
-    print("✅ Saved complete dataset: complete_features.npy, complete_targets.npy")
+    np.save("Descriptor1/Descriptor1_complete_features.npy", feature_matrix)
+    np.save("Descriptor1/Descriptor1_complete_targets.npy", targets)
+    print("✅ Saved complete dataset: Descriptor1_complete_features.npy, Descriptor1_complete_targets.npy")
 
 
-    #BALANCE THE DATASET
+    # OPTIONAL *** BALANCE THE DATASET
    # Create a 1:1 balanced dataset
     num_sensitive = np.sum(targets)
     num_not_sensitive = len(targets) - num_sensitive
@@ -257,9 +263,9 @@ def main():
     print(f"Class distribution: {np.sum(balanced_targets)} sensitive, {len(balanced_targets) - np.sum(balanced_targets)} not sensitive")
 
     #save balanced dataset
-    np.save("balanced_features.npy", balanced_feature_matrix)
-    np.save("balanced_targets.npy", balanced_targets)
-    print("✅ Saved balanced dataset: balanced_features.npy, balanced_targets.npy")
+    np.save("Descriptor1/Descriptor1_balanced_features.npy", balanced_feature_matrix)
+    np.save("Descriptor1/Descriptor1_balanced_targets.npy", balanced_targets)
+    print("✅ Saved balanced dataset: Descriptor1_balanced_features.npy, Descriptor1_balanced_targets.npy")
     
     
     

@@ -1,6 +1,7 @@
 # Jupyter notebook files
 .ipynb_checkpoints/
-*.ipynb
+# *.ipynb
+
 
 # Data files - exclude large datasets
 new_structures/
@@ -17,12 +18,12 @@ __pycache__/
 reaction_vectors.csv
 
 # Large generated files
-*.npy
-final_dict*.pkl
-*_model.pkl
-*_features.npy
-*_targets.npy
-*_complete.pkl
+# *.npy
+# final_dict*.pkl
+# *_model.pkl
+# *_features.npy
+# *_targets.npy
+# *_complete.pkl
 
 # Model outputs
 *_binary_classifier.pkl
@@ -54,3 +55,5 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+Descriptor1/classification.ipynb
+Descriptor1/analysis.ipynb
