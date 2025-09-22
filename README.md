@@ -1,6 +1,6 @@
 # Density Sensitivity ML Pipeline
 
-A machine learning pipeline for predicting density sensitivity in chemical reactions using molecular structure data and Coulomb matrices.
+A machine learning pipeline for predicting density sensitivity in chemical reactions using molecular strucuture and Coulomb matrices.
 
 ## 🎯 Project Overview
 
@@ -10,7 +10,7 @@ This project implements a complete ML pipeline to predict whether chemical react
 2. **Generates Coulomb matrices** for molecular representation
 3. **Combines reaction matrices** according to stoichiometry
 4. **Extracts eigenvalues** as compressed features
-5. **Trains ML models** for binary classification and regression
+5. **Trains ML models** for binary classification and regression using Random Forest and XGBoost
 
 ## 🔬 Scientific Background
 
@@ -26,11 +26,12 @@ density_sensitivity/
 ├── generate_cm.py              # Coulomb matrix generation
 ├── diagonalize_matrices.py     # Matrix diagonalization
 ├── pad_and_metadata.py         # Feature standardization
-├── preprocess.py               # Data preprocessing utilities
+├── preprocess.py               # Data preprocessing utilities (combining matrices) 
 ├── train_binary_classifier.py  # Binary classification training
 ├── train_random_forest.py      # Regression model training
 ├── requirements.txt            # Python dependencies
 ├── TODO.md                     # Project status and tasks
+├── Descriptor1                 # data and Analysis for descriptor 1 
 └── validation/                 # Validation scripts
 ```
 
@@ -72,26 +73,17 @@ The binary classifier achieves:
 - **Accuracy**: [To be updated]
 - **Feature Importance**: Top features identified from eigenvalue analysis
 
-## 🔧 Configuration
 
-Key parameters can be adjusted in the main scripts:
-- `test_subsets`: List of datasets to process
-- `threshold`: Density sensitivity threshold for binary classification
-- `test_size`: Fraction of data for testing
+## 📝 Data 
 
-## 📝 Dependencies
-
-- `numpy`: Numerical computing
-- `pandas`: Data manipulation
-- `scikit-learn`: Machine learning
-- `ase`: Atomic simulation environment
-- `dscribe`: Molecular descriptors
-- `matplotlib`, `seaborn`: Visualization
-
-## 📄 License
-
-[Add your license information here]
+- GMTKN55 database 
 
 ## 🙏 Acknowledgments
 
-- Burke Group @ UCI 
+- Burke Group @ UCI
+
+##  Resources
+https://goerigk.chemistry.unimelb.edu.au/research/the-gmtkn55-database/
+https://hunterheidenreich.com/posts/molecular-descriptor-coulomb-matrix/#the-coulomb-matrix
+https://pubs.acs.org/doi/10.1021/acs.jctc.4c00689
+ 
