@@ -31,7 +31,7 @@ density_sensitivity/
 ├── train_random_forest.py      # Regression model training
 ├── requirements.txt            # Python dependencies
 ├── TODO.md                     # Project status and tasks
-├── Descriptor1                 # data and Analysis for descriptor 1 
+├── Descriptor1/                # data and Analysis for descriptor 1 
 └── validation/                 # Validation scripts
 ```
 
