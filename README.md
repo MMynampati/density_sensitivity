@@ -83,7 +83,7 @@ The binary classifier achieves:
 - Burke Group @ UCI
 
 ##  Resources
-https://goerigk.chemistry.unimelb.edu.au/research/the-gmtkn55-database/
-https://hunterheidenreich.com/posts/molecular-descriptor-coulomb-matrix/#the-coulomb-matrix
-https://pubs.acs.org/doi/10.1021/acs.jctc.4c00689
+- https://hunterheidenreich.com/posts/molecular-descriptor-coulomb-matrix/#the-coulomb-matrix
+- https://goerigk.chemistry.unimelb.edu.au/research/the-gmtkn55-database
+- https://pubs.acs.org/doi/10.1021/acs.jctc.4c00689
  
