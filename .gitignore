@@ -57,3 +57,4 @@ logs/
 *.temp
 Descriptor1/classification.ipynb
 Descriptor1/analysis.ipynb
+coulomb_ASE.ipynb
