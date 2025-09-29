@@ -58,3 +58,5 @@ logs/
 Descriptor1/classification.ipynb
 Descriptor1/analysis.ipynb
 coulomb_ASE.ipynb
+Descriptor1/Descriptor1_complete_features_fixed.npy
+Descriptor1/Descriptor1_complete_targets_fixed.npy
