@@ -58,7 +58,10 @@ def _sort_by_row_l2(M: np.ndarray) -> np.ndarray:
 
 
 def _block_diag_repeat(M: np.ndarray, k: int, sign: int) -> np.ndarray:
-    """k copies of sign*M on a block diagonal (no magnitude scaling)."""
+    """ 
+    used to repeat coulomb matrix of a  molecule k times
+    k copies of sign*M on a block diagonal (no magnitude scaling).
+    """
     n = M.shape[0]
     out = np.zeros((k*n, k*n), dtype=M.dtype)
     for i in range(k):
@@ -116,10 +119,10 @@ def combine_cm(matrices, coeffs) -> np.ndarray:
         if c == 0:
             continue
         k = abs(c)
-        E = _block_diag_repeat(M, k, +1)  # repeat only; no sign here
+        E = _block_diag_repeat(M, k, +1)  # repeat only; no sign here (repeat a molecule k times)
         # print(E.shape)
         # print(E)
-        (pos_blocks if c > 0 else neg_blocks).append(E)
+        (pos_blocks if c > 0 else neg_blocks).append(E)   #assign to either pos or neg
 
     if not pos_blocks or not neg_blocks:
         raise ValueError("Ref line is unbalanced: need at least one + and one - term.")
@@ -128,7 +131,7 @@ def combine_cm(matrices, coeffs) -> np.ndarray:
     # if multiple matirces for + or - , add them as block diagonal 
     # at the end there will be 1 matrix of + matrices, one matrix of - matrices, 
     # each will have a shape that is sum of shape of matrices its built from 
-    P = _block_diag_many(pos_blocks)
+    P = _block_diag_many(pos_blocks) 
     N = _block_diag_many(neg_blocks)
 
     # print("\nshape of p : ", P.shape)
