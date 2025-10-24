@@ -2,21 +2,19 @@
 
 A machine learning pipeline for predicting density sensitivity in chemical reactions using molecular strucuture and Coulomb matrices.
 
-## 🎯 Project Overview
+## 🔬 Project Overview
 
-This project implements a complete ML pipeline to predict whether chemical reactions are sensitive to changes in electron density. The pipeline:
+This project implements a complete ML pipeline to predict whether chemical reactions are sensitive to changes in electron density.  
+Density-sensitive reactions are those where energy errors are driven by inaccuracies in the electron density, while density-insensitive reactions are those where errors arise primarily from the approximate functional form.
 
-1. **Processes molecular structures** from XYZ files
-2. **Generates Coulomb matrices** for molecular representation
-3. **Combines reaction matrices** according to stoichiometry
-4. **Extracts eigenvalues** as compressed features
-5. **Trains ML models** for binary classification and regression using Random Forest and XGBoost
+The pipeline integrates physics-based molecular encoding with modern ML techniques:
 
-## 🔬 Scientific Background
+- **Molecular Parsing** – Reads and parses molecular geometries from `.xyz` files.  
+- **Coulomb Matrix Descriptors** – Represents each molecule as a rotation- and permutation-invariant matrix capturing interatomic electrostatic interactions.  
+- **Reaction Matrices** – Constructs block-diagonal reaction matrices that account for stoichiometric coefficients of reactants and products.  
+- **Spectral Feature Extraction** – Computes and sorts eigenvalues of each reaction matrix to obtain fixed-length, invariant feature vectors.  
+- **Learning and Prediction** – Trains **Random Forest** and **XGBoost** models for **binary classification** (density sensitive vs. insensitive).
 
-- **Density Sensitivity**: Measures how much a chemical reaction's outcome changes when electron density is perturbed
-- **Coulomb Matrices**: Mathematical representations encoding atomic interactions in molecules
-- **Eigenvalues**: Compressed representations preserving essential chemical information
 
 ## 📁 Project Structure
 
@@ -30,7 +28,6 @@ density_sensitivity/
 ├── train_binary_classifier.py  # Binary classification training
 ├── train_random_forest.py      # Regression model training
 ├── requirements.txt            # Python dependencies
-├── TODO.md                     # Project status and tasks
 ├── Descriptor1/                # data and Analysis for descriptor 1 
 └── validation/                 # Validation scripts
 ```
@@ -60,18 +57,27 @@ python train_binary_classifier.py
 # Train regression model
 python train_random_forest.py
 ```
-
-## 📊 Current Status
-
-- ✅ expanded to all 55 molecular datasets
-- ✅ Binary classification model trained and evaluated
   
 ## 📈 Model Performance
 
-The binary classifier achieves:
-- **F1-Score**: [To be updated]
-- **Accuracy**: [To be updated]
-- **Feature Importance**: Top features identified from eigenvalue analysis
+### Random Forest
+- **Accuracy:** [To be updated]  
+- **F1-Score:** [To be updated]  
+- **Precision / Recall:** [To be updated]  
+- **Feature Importance:** 
+
+---
+
+### XGBoost
+- **Accuracy:** [To be updated]  
+- **F1-Score:** [To be updated]  
+- **Precision / Recall:** [To be updated]  
+- **Feature Importance:**   
+
+---
+
+*The dataset contains a moderate class imbalance (~33% density-sensitive, ~67% density-insensitive reactions). Models were evaluated with metrics robust to imbalance, including F1-score and precision/recall.*
+
 
 
 ## 📝 Data 
