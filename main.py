@@ -44,7 +44,7 @@ def main():
 
     # Configuration
     base_path = "new_structures"
-    #base_path = "/Users/nedamohseni/Downloads/new_structures"
+    # base_path = "/Users/nedamohseni/Downloads/new_structures"
 
     # load the pickle containing coulomb matrices for all setnames 
     with open("final_dict_allsets.pkl", "rb") as f:
@@ -184,7 +184,7 @@ def main():
     
     # Load SWARM data for S values
     swarm_df = pd.read_csv("../density_sensitivity/all_v2_SWARM.csv")
-    #swarm_df = pd.read_csv("/Users/nedamohseni/Desktop/density_sensitivity/all_v2_SWARM.csv")
+    # swarm_df = pd.read_csv("/Users/nedamohseni/Desktop/density_sensitivity/all_v2_SWARM.csv")
 
     pbe_df = swarm_df[swarm_df['calctype'] == 'PBE'].copy()                 #filter to only PBE data
     
@@ -196,6 +196,10 @@ def main():
         charge = row['charges']
         spin = row['spin']
         size = row['size']
+
+        # add some stats about eigenvals   (mean/std)
+        mean_eig = np.mean(eigenvalues)
+        std_eig = np.std(eigenvalues)
         
         # 1. Pad eigenvalue vector to max_size (144)
         padded_vector = np.zeros(max_size)
@@ -203,6 +207,7 @@ def main():
         
         # 2. Append charge and spin and size to create feature vector
         feature_vector = np.append(padded_vector, [charge, spin,size])
+        # feature_vector = np.append(padded_vector, [charge, spin,size, mean_eig, std_eig])        # uncomment to add mean / std of eigenvals
         feature_matrix.append(feature_vector)
         
         # 3. Get S value from SWARM file
