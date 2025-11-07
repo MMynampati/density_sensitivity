@@ -48,48 +48,47 @@ pip install -r requirements.txt
 ### Running the Pipeline
 
 ```bash
-# Process molecular datasets
+# generates datasets used for ML training
 python main.py
 
-# Train binary classifier
-python train_binary_classifier.py
-
-# Train regression model
-python train_random_forest.py
 ```
   
 ## 📈 Model Performance
 
-### Random Forest
-- **Accuracy:** [To be updated]  
-- **F1-Score:** [To be updated]  
-- **Precision / Recall:** [To be updated]  
-- **Feature Importance:** 
+
+The dataset exhibits a moderate class imbalance (~33% density-sensitive vs. ~67% density-insensitive reactions). Models were evaluated using metrics robust to imbalance, including balanced accuracy, recall, and precision.
+
+### Test set performance of each model at its optimal K\* (number of eigenvalues used)
+
+| Model         | K\* | Accuracy | Balanced Accuracy | ROC-AUC | Recall (Minority) | Precision (Minority) |
+|---------------|:---:|:--------:|:-----------------:|:-------:|:-----------------:|:--------------------:|
+| **XGBoost**       | 22  | **0.821** | **0.812** | **0.883** | 0.784 | **0.710** |
+| **Random Forest** | 22  | 0.801 | 0.791 | 0.864 | 0.763 | 0.679 |
+| **Decision Tree** | 24  | 0.808 | 0.806 | 0.825 | **0.804** | 0.678 |
 
 ---
-
-### XGBoost
-- **Accuracy:** [To be updated]  
-- **F1-Score:** [To be updated]  
-- **Precision / Recall:** [To be updated]  
-- **Feature Importance:**   
-
----
-
-*The dataset contains a moderate class imbalance (~33% density-sensitive, ~67% density-insensitive reactions). Models were evaluated with metrics robust to imbalance, including F1-score and precision/recall.*
-
-
 
 ## 📝 Data 
 
-- GMTKN55 database 
+- GMTKN55 database
+- SWARM dataset 
 
 ## 🙏 Acknowledgments
 
 - Burke Group @ UCI
+- Goerigk Research Group @ university of Melbourne
+- Stephan Grimme's group @ university of Bonn
 
-##  Resources
-- https://hunterheidenreich.com/posts/molecular-descriptor-coulomb-matrix/#the-coulomb-matrix
-- https://goerigk.chemistry.unimelb.edu.au/research/the-gmtkn55-database
-- https://pubs.acs.org/doi/10.1021/acs.jctc.4c00689
+## Resources
+- <https://hunterheidenreich.com/posts/molecular-descriptor-coulomb-matrix/#the-coulomb-matrix>
+- <https://goerigk.chemistry.unimelb.edu.au/research/the-gmtkn55-database>
+- <https://pubs.acs.org/doi/10.1021/acs.jctc.4c00689>
+
+## Reference
+Goerigk, L.; Hansen, A.; Bauer, C.; Ehrlich, S.; Najibi, A.; Grimme, S.  
+*A look at the density functional theory zoo with the advanced GMTKN55 database for general main group thermochemistry, kinetics and noncovalent interactions.*  
+**Phys. Chem. Chem. Phys.** 2017, 19, 32184–32215.  
+DOI: [10.1039/C7CP04913G](https://doi.org/10.1039/C7CP04913G)
+
+
  
